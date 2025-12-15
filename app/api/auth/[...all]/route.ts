@@ -19,7 +19,7 @@ const authHandlers = toNextJsHandler(auth);
 const botSettings = { mode: "LIVE", allow: [] } satisfies BotOptions;
 const restrictRateLimitSettings = {
   mode: "LIVE",
-  max: 10,
+  max: 60,
   interval: "10m",
 } as SlidingWindowRateLimitOptions<[]>;
 // we'll use lax one for non-sensitive routes.
@@ -31,11 +31,12 @@ const laxRestrictRateLimitSettings = {
 
 const emailSettings = {
   mode: "LIVE",
-  block: ["DISOPOSABLE", "INVALID", "NO_MX_RECORD"],
+  block: ["INVALID"],
+  // block: ["DISOPOSABLE", "INVALID", "NO_MX_RECORD"],
   // no_mx_record is to check if the domain is correct or not example gmai.co is not a valid one
 } as EmailOptions;
 export const { GET } = authHandlers;
-
+// export const { POST } = authHandlers;
 export async function POST(request: Request) {
   const cloneRequest = request.clone();
   const decision = await checkArcjet(request);
@@ -43,24 +44,24 @@ export async function POST(request: Request) {
   if (decision.isDenied()) {
     if (decision.reason.isRateLimit()) {
       return new Response(null, { status: 429 });
-    }
-  } else if (decision.reason.isEmail()) {
-    let message: string;
-    if (decision.reason.emailTypes.includes("INVALID")) {
-      message = "Email address format is invalid.";
-    }
-    if (decision.reason.emailTypes.includes("DISPOSABLE")) {
-      message = "Disposable email addresses are not allowed.";
-    }
-    if (decision.reason.emailTypes.includes("NO_MX_RECORDS")) {
-      // this is to catch if the domain is invalid . example gmai.co is not a valid one
-      message = "Email domain is not valid.";
+    } else if (decision.reason.isEmail()) {
+      let message: string;
+      if (decision.reason.emailTypes.includes("INVALID")) {
+        message = "Email address format is invalid.";
+      }
+      if (decision.reason.emailTypes.includes("DISPOSABLE")) {
+        message = "Disposable email addresses are not allowed.";
+      }
+      if (decision.reason.emailTypes.includes("NO_MX_RECORDS")) {
+        // this is to catch if the domain is invalid . example gmai.co is not a valid one
+        message = "Email domain is not valid.";
+      } else {
+        message = "Invalid email";
+      }
+      return Response.json({ message }, { status: 400 });
     } else {
-      message = "Invalid email";
+      return new Response(null, { status: 403 });
     }
-    return Response.json({ message }, { status: 400 });
-  } else {
-    return new Response(null, { status: 403 });
   }
 
   return authHandlers.POST(cloneRequest);
