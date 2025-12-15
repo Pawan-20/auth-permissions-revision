@@ -12,3 +12,11 @@ services:
       - pgdata:/var/lib/postgresql/data
 volumes:
   pgdata:
+
+
+  # What this file does : 
+  # Pulled the PG image, created a container named something like<folder_name>_db_1, started PGSQL inside that container, it created a perisistent volume named yourproject_pgdata
+  #  spin this up commmand :  docker compose up -d
+  #  see running containers : docker ps or docker ps -a
+  #  how  to stop the database ( free from ram + cpu ) docker compose down
+#  to delete everything : docker compose down -v ( deletes all db data , storage etc ) 
